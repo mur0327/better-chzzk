@@ -1,0 +1,80 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 260px;
+  padding: 16px 20px;
+  background: #18191b;
+  color: #e8eaed;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Header */
+h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #333;
+  color: #00ffa3;
+  letter-spacing: -0.3px;
+}
+
+/* Settings */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.setting-row:not(:last-child) {
+  border-bottom: 1px solid #2a2b2d;
+}
+
+.setting-row label {
+  font-weight: 500;
+  color: #e8eaed;
+}
+
+/* Checkbox */
+.setting-row input[type="checkbox"] {
+  accent-color: #00ffa3;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Number Input Group */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setting-row input[type="number"] {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #2a2b2d;
+  color: #e8eaed;
+  text-align: center;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.setting-row input[type="number"]:focus {
+  outline: none;
+  border-color: #00ffa3;
+}
+
+.unit {
+  color: #9aa0a6;
+  font-size: 13px;
+}
