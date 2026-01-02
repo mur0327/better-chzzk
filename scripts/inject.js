@@ -16,7 +16,6 @@
     VOLUME_OVERLAY_TIMEOUT: 1000, // 볼륨 오버레이 표시 시간 (ms)
     POINT_CLICK_INTERVAL: 1000, // 포인트 버튼 감지 주기 (ms)
     CATCHUP_CHECK_INTERVAL: 1000, // 빨리감기 상태 체크 주기 (ms)
-    CATCHUP_BUFFER_TOLERANCE: 0.5, // 버퍼 끝과의 허용 오차 (초)
   };
 
   // ======================================
@@ -268,17 +267,7 @@
   }
 
   /**
-   * 버퍼 끝(live edge)까지의 거리 계산
-   * @param {HTMLVideoElement} video
-   * @returns {number|null} 버퍼 끝 위치 (초), 버퍼가 없으면 null
-   */
-  function getBufferEnd(video) {
-    if (!video.buffered || video.buffered.length === 0) return null;
-    return video.buffered.end(video.buffered.length - 1);
-  }
-
-  /**
-   * 지연시간 체크 및 재생속도 조절 (버퍼 끝까지 따라잡기)
+   * 지연시간 체크 및 재생속도 조절 (실제 레이턴시 기반)
    */
   function checkLatencyAndCatchUp() {
     const settings = getCatchupSettings();
@@ -290,10 +279,8 @@
     const video = document.querySelector("video");
     if (!video) return;
 
-    const bufferEnd = getBufferEnd(video);
-    if (bufferEnd === null) return;
-
-    const distanceToLive = bufferEnd - video.currentTime;
+    // 버퍼링 중인지 확인 (재생이 멈췄는데 일시정지가 아닌 상태)
+    const isBuffering = video.readyState < 3 && !video.paused;
 
     if (latencyMs > settings.threshold && !isCatchingUp) {
       // 지연 시간 초과 → 빨리감기 시작
@@ -304,11 +291,24 @@
         "start",
         `latency ${(latencyMs / 1000).toFixed(1)}s > ${settings.threshold / 1000}s, speeding up to ${settings.rate}x`
       );
-    } else if (isCatchingUp && distanceToLive <= CONFIG.CATCHUP_BUFFER_TOLERANCE) {
-      // 버퍼 끝 도달 → 정상 속도 복귀
-      isCatchingUp = false;
-      video.playbackRate = 1.0;
-      log("catchup", "done", `reached buffer end (${distanceToLive.toFixed(2)}s away), back to 1.0x`);
+    } else if (isCatchingUp) {
+      // 버퍼링 중에는 배속 유지 (배속을 풀면 오히려 지연이 더 늘어남)
+      if (isBuffering) {
+        return;
+      }
+
+      // 실제 지연시간이 임계값 이하로 감소하면 정상 속도 복귀
+      // 약간의 여유를 두어 바로 다시 배속이 걸리지 않도록 함
+      const targetLatency = settings.threshold * 0.8;
+      if (latencyMs <= targetLatency) {
+        isCatchingUp = false;
+        video.playbackRate = 1.0;
+        log(
+          "catchup",
+          "done",
+          `latency ${(latencyMs / 1000).toFixed(1)}s <= ${(targetLatency / 1000).toFixed(1)}s, back to 1.0x`
+        );
+      }
     }
   }
 
