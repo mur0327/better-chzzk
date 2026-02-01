@@ -44,7 +44,7 @@
       "background: #192226; padding: 2px 4px; color: white;",
       "background: #427d53; padding: 2px 4px; border-radius: 0px 4px 4px 0px; color: white;",
       "",
-      message
+      message,
     );
   }
 
@@ -111,8 +111,14 @@
     const latencyMs = window.__getLiveInfo?.()?.latency;
     if (typeof latencyMs === "undefined") return;
 
+    // SPA 네비게이션으로 요소가 DOM에서 분리되면 null 처리
+    // isConnected는 요소가 실제 document에 연결되어 있는지 확인
+    if (latencyElement && !latencyElement.isConnected) {
+      latencyElement = null;
+    }
+
     // 레이턴시 요소가 없으면 생성 및 삽입
-    if (!latencyElement || !latencyElement.parentElement) {
+    if (!latencyElement) {
       const donationDiv = document.querySelector(SELECTORS.DONATION_DIV);
       if (!donationDiv) return;
 
@@ -178,8 +184,8 @@
     if (!wrapper) return;
 
     // SPA 네비게이션으로 wrapper가 교체되면 기존 overlay가 DOM에서 분리됨
-    // 이 경우 기존 overlay를 재사용하면 문제가 발생하므로 새로 생성
-    if (volumeOverlay && !volumeOverlay.parentElement) {
+    // isConnected로 실제 document 연결 여부 확인
+    if (volumeOverlay && !volumeOverlay.isConnected) {
       volumeOverlay = null;
     }
 
@@ -249,7 +255,7 @@
       log(
         "settings",
         "update",
-        `enabled=${catchupSettings.enabled}, threshold=${catchupSettings.threshold}s, rate=${catchupSettings.rate}x`
+        `enabled=${catchupSettings.enabled}, threshold=${catchupSettings.threshold}s, rate=${catchupSettings.rate}x`,
       );
     }
   });
@@ -289,7 +295,7 @@
       log(
         "catchup",
         "start",
-        `latency ${(latencyMs / 1000).toFixed(1)}s > ${settings.threshold / 1000}s, speeding up to ${settings.rate}x`
+        `latency ${(latencyMs / 1000).toFixed(1)}s > ${settings.threshold / 1000}s, speeding up to ${settings.rate}x`,
       );
     } else if (isCatchingUp) {
       // 버퍼링 중에는 배속 유지 (배속을 풀면 오히려 지연이 더 늘어남)
@@ -306,7 +312,7 @@
         log(
           "catchup",
           "done",
-          `latency ${(latencyMs / 1000).toFixed(1)}s <= ${(targetLatency / 1000).toFixed(1)}s, back to 1.0x`
+          `latency ${(latencyMs / 1000).toFixed(1)}s <= ${(targetLatency / 1000).toFixed(1)}s, back to 1.0x`,
         );
       }
     }
